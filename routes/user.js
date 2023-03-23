@@ -1,5 +1,7 @@
 const express = require('express');
 const User = require('../models/user');
+var jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 const { body, validationResult } = require('express-validator');
 const router = express.Router();
 
@@ -7,17 +9,21 @@ const router = express.Router();
 router.post('/users',[
   body('name').isLength({ min: 5 }),
   body('email').isEmail(),
-  body('age').isLength({ min: 1 }),
+  body('password').isLength({ min: 1}),
 ]
 , async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
   }
-  const { name, email, age } = req.body;
 
+ 
   try {
-    const user = new User({ name, email, age });
+    let { name, email, password } = req.body;
+    const salt = await bcrypt.genSalt(10);
+     password =await bcrypt.hash(password,salt);
+    console.log("pass=>",password);
+    const user = await new User({ name, email, password });
     console.log("user=>",user);
     
     // let use = await user.findOne({email:email});
@@ -27,7 +33,7 @@ router.post('/users',[
     // }
     
     await user.save();
-    res.send(user);
+    res.send(password);
   } catch (error) {
     console.error(error);
     res.status(500).send(error);
