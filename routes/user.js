@@ -4,7 +4,7 @@ var jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const { body, validationResult } = require('express-validator');
 const router = express.Router();
-
+const JWT_SECRET = "manish123";
 // Create a new user
 router.post('/users',[
   body('name').isLength({ min: 5 }),
@@ -26,19 +26,72 @@ router.post('/users',[
     const user = await new User({ name, email, password });
     console.log("user=>",user);
     
+
     // let use = await user.findOne({email:email});
     // if(use)
     // {
     //   return res.status(400).json({error:"this email is already exists"})
     // }
+    const data = {
+      user:{
+        id:user.id
+      }
+    }
+    const AuthToken = jwt.sign(data,JWT_SECRET);
+    console.log(AuthToken);
     
     await user.save();
-    res.send(password);
+    // res.send(AuthToken);
+    res.json({AuthToken})
   } catch (error) {
     console.error(error);
     res.status(500).send(error);
   }
 });
+
+
+// Create a new user
+router.post('/login',[
+  body('email','Enter a valid email').isEmail(),
+  body('password','password can not be blank').exists()
+], async (req, res) => {
+
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+ 
+  let { email, password } = req.body;
+  try {
+   let check =await User.findOne({});
+   console.log("check=>",check);
+    if(!check)
+    {
+      return res.status(400).json({error:'Please try to login with correct credential'});
+    }
+
+    const comparePassword = bcrypt.compare(password,check.password);
+    if(!comparePassword)
+    {
+      return res.status(400).json({error:'Please try to login with correct credential'}); 
+    }
+    
+    const data = {
+      check:{
+        id:check.id
+      }
+    }
+    const AuthToken = jwt.sign(data,JWT_SECRET);
+    console.log(AuthToken);
+    
+    // res.send(AuthToken);
+    res.json({AuthToken})
+  } catch (error) {
+    console.error(error);
+    res.status(500).send(error);
+  }
+});
+
 
 // Get all users
 router.get('/users', async (req, res) => {
