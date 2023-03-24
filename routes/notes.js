@@ -1,34 +1,16 @@
-// const express = require('express')
-// const notes = require('../models/notes')
-
-// const router = express.Router();
-
-// // create new 
-// router.post('/notes',async (req,res)=>{
-//     const {title,author,date} = req.body;
-
-//     try{
-//         const notes = new notes({title,author,date});
-//         await notes.save();
-//         res.send(notes)
-//     }
-//     catch(error)
-//     {
-//         console.log(error);
-//         res.status(500).send(error);
-//     }
-
-// });
-
-// module.exports = router;
-
-
 const express = require('express');
 const Notes = require('../models/notes');
-
+const fetchuser = require('../middleware/fetchuser')
 const router = express.Router();
 
-// Create a new user
+//fetch the all notes 
+router.get('/fetchallnotes',fetchuser,async (req,res)=>{
+  const notes = await Notes.find({user:req.user.id})
+  console.log("notes=>",notes)
+res.json(notes);
+})
+
+// Create a new notes
 router.post('/notes', async (req, res) => {
   const { title,author,date } = req.body;
 

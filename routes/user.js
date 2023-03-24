@@ -4,6 +4,7 @@ var jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const { body, validationResult } = require('express-validator');
 const router = express.Router();
+const fetchuser = require('../middleware/fetchuser')
 const JWT_SECRET = "manish123";
 // Create a new user
 router.post('/users',[
@@ -22,9 +23,9 @@ router.post('/users',[
     let { name, email, password } = req.body;
     const salt = await bcrypt.genSalt(10);
      password =await bcrypt.hash(password,salt);
-    console.log("pass=>",password);
+    // console.log("pass=>",password);
     const user = await new User({ name, email, password });
-    console.log("user=>",user);
+    // console.log("user=>",user);
     
 
     // let use = await user.findOne({email:email});
@@ -38,7 +39,7 @@ router.post('/users',[
       }
     }
     const AuthToken = jwt.sign(data,JWT_SECRET);
-    console.log(AuthToken);
+    // console.log(AuthToken);
     
     await user.save();
     // res.send(AuthToken);
@@ -63,22 +64,22 @@ router.post('/login',[
  
   let { email, password } = req.body;
   try {
-   let check =await User.findOne({});
-   console.log("check=>",check);
-    if(!check)
+   let user =await User.findOne({});
+   console.log("check=>",user);
+    if(!user)
     {
       return res.status(400).json({error:'Please try to login with correct credential'});
     }
 
-    const comparePassword = bcrypt.compare(password,check.password);
+    const comparePassword = bcrypt.compare(password,user.password);
     if(!comparePassword)
     {
       return res.status(400).json({error:'Please try to login with correct credential'}); 
     }
     
     const data = {
-      check:{
-        id:check.id
+      user:{
+        id:user.id
       }
     }
     const AuthToken = jwt.sign(data,JWT_SECRET);
@@ -91,6 +92,21 @@ router.post('/login',[
     res.status(500).send(error);
   }
 });
+
+// Get a user from jwt token
+router.post('/getuser',fetchuser,async (req, res) => {
+
+  try {
+   
+    userId = req.user.id;
+    const users = await User.findById(userId).select("-password");
+    res.send(users);
+  } catch (error) {
+    console.error("getuser error= ",error);
+    res.status(500).send(error);
+  }
+})
+
 
 
 // Get all users
